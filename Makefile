@@ -4,7 +4,7 @@ TEST = test
 
 # Add all object files needed for compiling:
 EXE_OBJ = main.o
-OBJS = main.o ImageTransform.o
+OBJS = main.o ImageTransform.o Point.o Pt.o
 
 # Generated files
 CLEAN_RM = out-*.png
