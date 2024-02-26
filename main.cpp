@@ -14,7 +14,7 @@ int main() {
   //uiuc::PNG image(2480,3508);
 
   //png.readFromFile("alma.png");
-  png.readFromFile("fma.png");
+  png.readFromFile("radio.png");
   //png2.readFromFile("accolade.png");
   
   /*
@@ -45,8 +45,8 @@ int main() {
   //result = logoEUREKA6(png);
   //result.writeToFile("eureka_res.png");
 
-  //result = LPE_homemade(png,60);
-  result = egalisationHistogram(png);
+  result = LPE_homemade(png,20);
+  //result = egalisationHistogram(png);
   result.writeToFile("AAA.png");
 
   /*try{

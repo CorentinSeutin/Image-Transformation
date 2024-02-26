@@ -501,7 +501,7 @@ PNG egalisationHistogram(PNG img){
 }
 
 //******************************************************************************************************************************************//
-void updateNeighs(std::vector<Pt> neighs, int i, int j) {
+void updateNeighs(std::vector<Pt> &neighs, int i, int j) {
   neighs[0].setY(i-1); neighs[0].setX(j-1); 
   neighs[1].setY(i-1); neighs[1].setX(j); 
   neighs[2].setY(i-1); neighs[2].setX(j+1); 
@@ -512,7 +512,7 @@ void updateNeighs(std::vector<Pt> neighs, int i, int j) {
   neighs[7].setY(i+1); neighs[7].setX(j+1); 
 }
 
-void updateCardNeighs(std::vector<Pt> neighs, int i, int j) {
+void updateCardNeighs(std::vector<Pt> &neighs, int i, int j) {
   neighs[0].setY(i-1);    neighs[0].setX(j);      //NORTH
   neighs[1].setY(i);      neighs[1].setX(j-1);    //WEST
   neighs[2].setY(i);      neighs[2].setX(j+1);    //EAST
@@ -544,7 +544,7 @@ bool belongsTo(std::vector<int> list, int n){
   return false;
 }
 
-void LPE_updateNeigh(std::vector<std::vector<int>> labels, std::vector<std::vector<int>> stabilisation, int i, int j, int order){
+void LPE_updateNeigh(std::vector<std::vector<int>> &labels, std::vector<std::vector<int>> &stabilisation, int i, int j, int order){
   if(labels[i][j] == 0 || stabilisation[i][j] == 1){ //0 = WATERSHED
     return;
   }
@@ -623,6 +623,7 @@ PNG LPE_homemade(PNG image, int tolerance) {
       updateNeighs(neighs,i,j);
 
       for(int k = 0; k < neigh_size; k++){
+        //std::cout << "y " << neighs[k].getY() << " x " << neighs[k].getX() << std::endl;
         //Case : the neighbour does not exist or has already a label
         if( neighs[k].getY() < 0 || neighs[k].getX() < 0 || neighs[k].getY() >= height || neighs[k].getX() >= width || 
         labels[neighs[k].getY()][neighs[k].getX()] == 0 ){ //0 = WATERSHED
@@ -634,6 +635,7 @@ PNG LPE_homemade(PNG image, int tolerance) {
           labels[i][j] != 0 //WATERSHED
         ){
           labels[neighs[k].getY()][neighs[k].getX()] = labels[i][j];
+          //std::cout << "labels[" << neighs[k].getY() << "][" << neighs[k].getX() << "] = " << labels[neighs[k].getY()][neighs[k].getX()] << std::endl;
           continue;
         }
         //If the center pixel is a WATERSHED then give a label for each neighbour
@@ -662,8 +664,12 @@ PNG LPE_homemade(PNG image, int tolerance) {
   }
   //End of labelising
 
-
-
+  /*for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
+      std::cout << "labels[" << i << "][" << j << "] = " << labels[i][j] << std::endl;
+    }
+  }*/
+  
   //Stabilisation of the output
   int cpt = 1;
 
