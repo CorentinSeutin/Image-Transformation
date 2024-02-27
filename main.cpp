@@ -46,7 +46,8 @@ int main() {
   //result.writeToFile("eureka_res.png");
 
   result = LPE_homemade(png,0);
-  //result = egalisationHistogram(png);
+  //result = colorToGray(png);
+  //result = egalisationHistogram(result);
   result.writeToFile("AAA.png");
 
   /*try{

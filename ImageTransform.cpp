@@ -617,59 +617,65 @@ PNG LPE_homemade(PNG image, int tolerance) {
 
   labelsValuesGray.push_back(tmp2.getPixel(0,0).h);
 
+  int x, y;
+
   //Labelise the entire image
   for(int i = 0; i < height; i++){
     for(int j = 0; j < width; j++){
       updateNeighs(neighs,i,j);
 
       for(int k = 0; k < neigh_size; k++){
-        //std::cout << "y " << neighs[k].getY() << " x " << neighs[k].getX() << std::endl;
+        x = neighs[k].getX();
+        y = neighs[k].getY();
+
         //Case : the neighbour does not exist or has already a label
-        if( neighs[k].getY() < 0 || neighs[k].getX() < 0 || neighs[k].getY() >= height || neighs[k].getX() >= width || 
-        labels[neighs[k].getY()][neighs[k].getX()] == 0 ){ //0 = WATERSHED
+        if( y < 0 || x < 0 || y >= height || x >= width || labels[y][x] == 0 ){ //0 = WATERSHED
           continue;
         }
+
+        tmp_pixel = tmp2.getPixel(x,y);
+
         //Same zone, same label
-        if( labelsValuesGray[labels[i][j]] - tolerance <= tmp2.getPixel(neighs[k].getX(),neighs[k].getY()).h &&
-          tmp2.getPixel(neighs[k].getX(),neighs[k].getY()).h <= labelsValuesGray[labels[i][j]] + tolerance &&
+        if( labelsValuesGray[labels[i][j]] - tolerance <= tmp_pixel.h &&
+          tmp_pixel.h <= labelsValuesGray[labels[i][j]] + tolerance &&
           labels[i][j] != 0 //WATERSHED
         ){
+          //std::cout << tmp_pixel.h << std::endl;
           labels[neighs[k].getY()][neighs[k].getX()] = labels[i][j];
-          //std::cout << "labels[" << neighs[k].getY() << "][" << neighs[k].getX() << "] = " << labels[neighs[k].getY()][neighs[k].getX()] << std::endl;
           continue;
         }
         //If the center pixel is a WATERSHED then give a label for each neighbour
         if(labels[i][j] == 0){
+          //std::cout << "COUCOU\n";
           label++;
           labels[neighs[k].getY()][neighs[k].getX()] = label;
 
           //Determination of labels and its values
           allLabels.push_back(label); //label
 
-          tmp_pixel = image.getPixel(neighs[k].getX(),neighs[k].getY());
+          tmp_pixel = image.getPixel(x,y);
           hsla_values.push_back(tmp_pixel.h); 
           hsla_values.push_back(tmp_pixel.s); 
           hsla_values.push_back(tmp_pixel.l);
           labelsValues.push_back(hsla_values); //DETERMINE A UNIQUE COLOR FOR THE LABEL
           hsla_values.clear();
 
-          tmp_pixel = tmp2.getPixel(neighs[k].getX(),neighs[k].getY());
+          tmp_pixel = tmp2.getPixel(x,y);
           labelsValuesGray.push_back(tmp_pixel.h);
           continue;
         }
         //Else it is a watershed
-        labels[neighs[k].getY()][neighs[k].getX()] = 0;
+        labels[y][x] = 0;
       }
     }
   }
   //End of labelising
-
-  /*for(int i = 0; i < height; i++){
+  for(int i = 0; i < height; i++){
     for(int j = 0; j < width; j++){
-      std::cout << "labels[" << i << "][" << j << "] = " << labels[i][j] << std::endl;
+      std::cout << labels[i][j] << std::endl;
     }
-  }*/
-  
+  }
+/*  
   //Stabilisation of the output
   int cpt = 1;
 
@@ -770,7 +776,7 @@ PNG LPE_homemade(PNG image, int tolerance) {
         }
       }
     }
-  }
+  }*/
 
   //Colorisation of the output image
   for(int i = 0; i < height; i++){
