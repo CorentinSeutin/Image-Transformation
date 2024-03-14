@@ -589,6 +589,8 @@ PNG LPE_homemade(PNG image, double tolerance) {
   //Initialisation of labels
   std::vector<std::vector<int>> labels(height, std::vector<int>(width, -1)); //INIT
   std::vector<std::vector<int>> stabilisation(height, std::vector<int>(width, 0)); //0 for "TO DO" & 1 for "DONE"
+  std::vector<std::vector<int>> new_labels(height, std::vector<int>(width, -1)); //INIT
+
 
   //Initialisation of the first label on the first pixel
   int label = 1;
@@ -680,6 +682,7 @@ PNG LPE_homemade(PNG image, double tolerance) {
   int cpt = 1;
 
   //Stabilisation of the watersheds
+  /*
   while(cpt != 0){
     cpt = 0;
 
@@ -722,12 +725,120 @@ PNG LPE_homemade(PNG image, double tolerance) {
         }
       }
     }
-  }
+  }*/
+  while(cpt != 0){
+    cpt = 0;
 
-  //Initialisation of cardinal neighbours list
-  std::vector<Pt> cardNeighs;
-  for(int i = 0; i < 4; i++){
-    cardNeighs.push_back(Pt());
+    //Update and complete the watershed
+    for(int i=0; i<height; i++){
+      for(int j=0; j<width; j++){
+
+        if(labels[i][j] == 0){ //Already a part of the watershed
+          continue;
+        }
+
+        std::vector<int> are_neighs_watershed(8, 0);
+        updateNeighs(neighs,i,j);
+
+        for(int k = 0; k < neigh_size; k++){
+          int X = neighs[k].getX();
+          int Y = neighs[k].getY();
+
+          if( Y >= 0 && X >= 0 && 
+          Y < height && X < width
+          ){ 
+            if(labels[Y][X] == 0){ //0 = WATERSHED
+              are_neighs_watershed[k] = pow(2,k);
+            }
+          }
+        }
+
+        int tmp_sum = 0;
+        for(int k = 0; k < neigh_size; k++){
+          tmp_sum += are_neighs_watershed[k];
+        }
+
+        //Try to create a imaginary line between 1 (NW) and another neigh
+        bool try1 = 
+          ( (tmp_sum & 1) == 1 ) && 
+          ( 
+            //( (tmp_sum & 16 ) == 16 ) || 
+            //( (tmp_sum & 64 ) == 64 ) ||
+            ( (tmp_sum & 128 ) == 128 )
+          );
+
+        //Try to create a imaginary line between 2 (N) and another neigh
+        bool try2 = 
+          ( (tmp_sum & 2) == 2 ) && 
+          ( 
+            //( (tmp_sum & 32 ) == 32 ) || 
+            ( (tmp_sum & 64 ) == 64 ) //||
+            //( (tmp_sum & 128 ) == 128 )
+          );
+
+        //Try to create a imaginary line between 4 (NE) and another neigh
+        bool try4 = 
+          ( (tmp_sum & 4) == 4 ) && 
+          ( 
+            //( (tmp_sum & 8 ) == 8 ) || 
+            ( (tmp_sum & 32 ) == 32 ) //||
+            //( (tmp_sum & 64 ) == 64 )
+          );
+
+        //Try to create a imaginary line between 8 (W) and another neigh
+        bool try8 = 
+          ( (tmp_sum & 8) == 8 ) && 
+          ( 
+            //( (tmp_sum & 4 ) == 4 ) || 
+            ( (tmp_sum & 16 ) == 16 ) //||
+            //( (tmp_sum & 128 ) == 128 )
+          );
+
+        //Try to create a imaginary line between 16 (E) and another neigh
+        bool try16 = 
+          ( (tmp_sum & 16) == 16 ) && 
+          ( 
+            //( (tmp_sum & 1 ) == 1 ) || 
+            ( (tmp_sum & 8 ) == 8 ) //||
+            //( (tmp_sum & 32 ) == 32 )
+          );
+
+        //Try to create a imaginary line between 32 (SW) and another neigh
+        bool try32 = 
+          ( (tmp_sum & 32) == 32 ) && 
+          ( 
+            //( (tmp_sum & 2 ) == 2 ) || 
+            ( (tmp_sum & 4 ) == 4 ) //||
+            //( (tmp_sum & 16 ) == 16 )
+          );
+
+        //Try to create a imaginary line between 64 (S) and another neigh
+        bool try64 = 
+          ( (tmp_sum & 64) == 64 ) && 
+          ( 
+            //( (tmp_sum & 1 ) == 1 ) || 
+            ( (tmp_sum & 2 ) == 2 ) //||
+            //( (tmp_sum & 4 ) == 4 )
+          );
+
+        //Try to create a imaginary line between 128 (SE) and another neigh
+        bool try128 = 
+          ( (tmp_sum & 128) == 128 ) && 
+          ( 
+            //( (tmp_sum & 8 ) == 8 ) || 
+            ( (tmp_sum & 1 ) == 1 ) //||
+            //( (tmp_sum & 2 ) == 2 )
+          );
+
+        if(
+          try1 || try2 || try4 || try8 || try16 || try32 ||
+          try64 || try128
+        ){
+          labels[i][j] = 0; //Become a part of the watershed
+          cpt++;
+        }
+      }
+    }
   }
 
   //Stabilisation of the bassins
@@ -778,13 +889,62 @@ PNG LPE_homemade(PNG image, double tolerance) {
     }
   }
 
+  //Reducing walls thickness
+  int radius = 1;
+  int i_min, i_max, j_min, j_max, first_label, u, v;
+  double distance;
+
+  for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
+      new_labels[i][j] = labels[i][j];
+
+      if(labels[i][j] != 0){ //Not a watershed
+        continue;
+      }
+
+      i_min = std::max(0,i-radius);
+      i_max = std::min(height-1,i+radius);
+      j_min = std::max(0,j-radius);
+      j_max = std::max(width-1,j+radius);
+
+      first_label = -1;
+
+      //First label encountered
+      for(int i_ = i_min; i_ <= i_max; i_++){
+        if(first_label != -1){
+          break;
+        }
+
+        for(int j_ = j_min; j_ <= j_max; j_++){
+          u = i_ - i;
+          v = j_ - j;
+          distance = std::sqrt( u*u + v*v );
+
+          if(distance > radius){
+            continue;
+          }
+
+          if(labels[i_][j_] != 0){
+            first_label = labels[i_][j_];
+            break;
+          }
+        }
+      }
+
+      //If a label else than WATERSHED exists then replace walls by the label
+      if(first_label != -1){
+        new_labels[i][j] = first_label;
+      }
+    } 
+  }
+
   //Colorisation of the output image
   for(int i = 0; i < height; i++){
     for(int j = 0; j < width; j++){
       HSLAPixel & pixel = imgout.getPixel(j,i);
-      pixel.h = labelsValues[labels[i][j]][0];
-      pixel.s = labelsValues[labels[i][j]][1];
-      pixel.l = labelsValues[labels[i][j]][2];
+      pixel.h = labelsValues[new_labels[i][j]][0];
+      pixel.s = labelsValues[new_labels[i][j]][1];
+      pixel.l = labelsValues[new_labels[i][j]][2];
       pixel.a = 1;
     }
   }
