@@ -571,7 +571,7 @@ void LPE_updateNeigh(std::vector<std::vector<int>> &labels, std::vector<std::vec
   }
 }
 
-PNG LPE_homemade(PNG image, int tolerance) {
+PNG LPE_homemade(PNG image, double tolerance) {
   int width = image.width(); 
   int height = image.height();
 
@@ -579,6 +579,12 @@ PNG LPE_homemade(PNG image, int tolerance) {
   uiuc::PNG imgout(width,height);
   tmp2 = grayscale(image);
   tmp2 = egalisationHistogram(tmp2);
+  /*for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
+      HSLAPixel & ooo = tmp2.getPixel(j, i);
+      std::cout << ooo.l << std::endl;
+    }
+  }*/
 
   //Initialisation of labels
   std::vector<std::vector<int>> labels(height, std::vector<int>(width, -1)); //INIT
@@ -596,15 +602,15 @@ PNG LPE_homemade(PNG image, int tolerance) {
   std::vector<int> allLabels;
   std::vector<std::vector<double>> labelsValues; //HSLA values associated to each label
   std::vector<double> hsla_values;
-  std::vector<int> labelsValuesGray; //Gray values
+  std::vector<double> labelsValuesGray; //Gray values
 
   allLabels.push_back(0); //WATERSHED
 
-  hsla_values.push_back(0); hsla_values.push_back(0); hsla_values.push_back(0);
-  labelsValues.push_back(hsla_values); //BLACK COLOR
+  hsla_values.push_back(0); hsla_values.push_back(1); hsla_values.push_back(0.5);
+  labelsValues.push_back(hsla_values); //RED COLOR
   hsla_values.clear();
 
-  labelsValuesGray.push_back(0);
+  labelsValuesGray.push_back(0.00f);
 
   allLabels.push_back(1); //FIRST LABEL
 
@@ -615,7 +621,7 @@ PNG LPE_homemade(PNG image, int tolerance) {
   labelsValues.push_back(hsla_values); //FIRST PIXEL VALUES
   hsla_values.clear();
 
-  labelsValuesGray.push_back(tmp2.getPixel(0,0).h);
+  labelsValuesGray.push_back(tmp2.getPixel(0,0).l);
 
   int x, y;
 
@@ -636,19 +642,18 @@ PNG LPE_homemade(PNG image, int tolerance) {
         tmp_pixel = tmp2.getPixel(x,y);
 
         //Same zone, same label
-        if( labelsValuesGray[labels[i][j]] - tolerance <= tmp_pixel.h &&
-          tmp_pixel.h <= labelsValuesGray[labels[i][j]] + tolerance &&
+        if( labelsValuesGray[labels[i][j]] - tolerance <= tmp_pixel.l &&
+          tmp_pixel.l <= labelsValuesGray[labels[i][j]] + tolerance &&
           labels[i][j] != 0 //WATERSHED
         ){
-          //std::cout << tmp_pixel.h << std::endl;
-          labels[neighs[k].getY()][neighs[k].getX()] = labels[i][j];
+          //std::cout << "ok\n";
+          labels[y][x] = labels[i][j];
           continue;
         }
         //If the center pixel is a WATERSHED then give a label for each neighbour
         if(labels[i][j] == 0){
-          //std::cout << "COUCOU\n";
           label++;
-          labels[neighs[k].getY()][neighs[k].getX()] = label;
+          labels[y][x] = label;
 
           //Determination of labels and its values
           allLabels.push_back(label); //label
@@ -661,7 +666,7 @@ PNG LPE_homemade(PNG image, int tolerance) {
           hsla_values.clear();
 
           tmp_pixel = tmp2.getPixel(x,y);
-          labelsValuesGray.push_back(tmp_pixel.h);
+          labelsValuesGray.push_back(tmp_pixel.l);
           continue;
         }
         //Else it is a watershed
@@ -670,12 +675,7 @@ PNG LPE_homemade(PNG image, int tolerance) {
     }
   }
   //End of labelising
-  for(int i = 0; i < height; i++){
-    for(int j = 0; j < width; j++){
-      std::cout << labels[i][j] << std::endl;
-    }
-  }
-/*  
+
   //Stabilisation of the output
   int cpt = 1;
 
@@ -776,7 +776,7 @@ PNG LPE_homemade(PNG image, int tolerance) {
         }
       }
     }
-  }*/
+  }
 
   //Colorisation of the output image
   for(int i = 0; i < height; i++){

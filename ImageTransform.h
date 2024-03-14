@@ -22,4 +22,4 @@ PNG colorToGray(PNG img);
 void histogram(PNG img, int* histo);
 void histogramCumulated(PNG img, int* histoCumul);
 PNG egalisationHistogram(PNG img);
-PNG LPE_homemade(PNG image, int tolerance);
+PNG LPE_homemade(PNG image, double tolerance);
