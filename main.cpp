@@ -45,7 +45,7 @@ int main() {
   //result = logoEUREKA6(png);
   //result.writeToFile("eureka_res.png");
 
-  result = LPE_homemade(png,0.1);
+  result = LPE_homemade(png,0.0725);
   //result = colorToGray(png);
   //result = egalisationHistogram(result);
   result.writeToFile("AAA.png");
